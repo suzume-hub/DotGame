@@ -73,6 +73,8 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 <button class="main" id="lstart">ゲーム開始</button><p class="sub hide" id="lwait">ホストがゲームを始めるのを待っています。</p>
 <button id="lleave">部屋を出る</button></section>
 
+<section id="s-rdy" class="hide"><div class="card"><p class="sub">お題</p><div class="big" id="rtheme"></div><p class="sub" style="text-align:center">パレット:<span id="rpname"></span></p><p class="sub" style="text-align:center">制限時間:<span id="rsecs"></span>秒</p><div class="chips" id="rchips"></div></div><button class="main" id="rgo">描きはじめる</button><p class="sub" style="text-align:center">ボタンを押すと、あなたのタイマーが動き出します。</p></section>
+
 <section id="s-wait" class="hide"><div class="card" style="text-align:center"><div class="big">描きおわり!</div><p>ほかの人を待っています…</p><p class="big" id="wcount"></p></div><p style="text-align:center"><button id="wskip">待たずに結果を見る</button></p></section>
 
 <section id="s-themes" class="hide"><h2>お題を編集</h2><p class="sub">1行に1つずつ書いてください。</p><textarea id="tarea" class="ti" spellcheck="false"></textarea><p class="sub" id="tmsg"></p><button class="main" id="tsave">保存する</button><p style="text-align:center"><button id="treset">初期のお題に戻す</button> <button id="tback">もどる</button></p></section>
@@ -83,6 +85,7 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 <div class="card">
 <p class="sub">お題</p><div class="big" id="theme"></div>
 <p class="sub" style="text-align:center">パレット:<span id="pname"></span></p>
+<p class="sub" style="text-align:center">制限時間:<span id="psecs"></span>秒</p>
 <div class="chips" id="pchips"></div>
 </div>
 <button class="main" id="go">描きはじめる</button>
@@ -116,7 +119,7 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 <p style="text-align:center"><button class="hide" id="grefresh">更新</button></p>
 <div style="margin-top:18px"><button class="main" id="again">もう1回あそぶ</button></div>
 </section>
-<p class="sub" style="text-align:center;font-size:12px">ver.3</p>
+<p class="sub" style="text-align:center;font-size:12px">ver.5</p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.1/dist/umd/supabase.js"></script>
 <script>
@@ -137,13 +140,14 @@ THEMES=(ld("themes")||[]).filter(function(s){return typeof s==="string"&&s});if(
 PALS=(ld("pals")||[]).filter(function(p){return p&&typeof p.n==="string"&&HX.test(p.bg)&&Array.isArray(p.c)&&p.c.length&&p.c.every(function(c){return HX.test(c)})});if(!PALS.length)PALS=JSON.parse(JSON.stringify(DEF_P));
 var st={players:3,secs:60,theme:"",pal:null,idx:0,arts:[],color:0,tool:"pen",t:0,timer:null,grid:[]};
 var $=function(i){return document.getElementById(i)};
-function show(id){["setup","reveal","pass","draw","result","gal","themes","pals","online","lobby","wait"].forEach(function(s){$("s-"+s).classList.toggle("hide",s!==id)})}
+function show(id){["setup","reveal","pass","draw","result","gal","themes","pals","online","lobby","wait","rdy"].forEach(function(s){$("s-"+s).classList.toggle("hide",s!==id)})}
 function pick(a){return a[Math.floor(Math.random()*a.length)]}
 function bump(k,el,d,lo,hi){st[k]=Math.max(lo,Math.min(hi,st[k]+d));$(el).textContent=st[k]}
 $("pm").onclick=function(){bump("players","pn",-1,1,8)};$("pp").onclick=function(){bump("players","pn",1,1,8)};
 $("tm").onclick=function(){bump("secs","tn",-10,10,300)};$("tp").onclick=function(){bump("secs","tn",10,10,300)};
 function roll(){
-$("go").textContent=st.online?"この内容でゲーム開始":"描きはじめる";
+$("psecs").textContent=st.secs;
+$("go").textContent=st.online?"この内容で決定":"描きはじめる";
 st.theme=pick(THEMES);st.pal=pick(PALS);
 $("theme").textContent=st.theme;$("pname").textContent=st.pal.n;
 var h=$("pchips");h.innerHTML="";
@@ -306,7 +310,11 @@ return{r:g.r,th:g.th.slice(0,30),n:g.n.slice(0,20),bg:g.bg,c:g.c.slice(),s:Math.
 function begin(v){
 rnd=v.r;mine="";st.pool={};st.theme=v.th;st.pal={n:v.n,bg:v.bg,c:v.c};st.secs=v.s;
 cur.presence({rd:v.r,art:null,show:null}).catch(function(){});
-$("ready").onclick();$("dwho").textContent=myName}
+$("rtheme").textContent=v.th;$("rpname").textContent=v.n;$("rsecs").textContent=v.s;
+var h=$("rchips");h.innerHTML="";
+[v.bg].concat(v.c).forEach(function(c){var d=document.createElement("div");d.className="chip";d.style.background=c;h.appendChild(d)});
+show("rdy")}
+$("rgo").onclick=function(){$("ready").onclick();$("dwho").textContent=myName};
 function game(peers){
 if(!st.online)return;
 var g=null;
