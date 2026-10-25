@@ -111,10 +111,12 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 
 <section id="s-gal" class="hide">
 <h2 id="gtitle"></h2>
+<p class="sub hide" id="gstat"></p>
 <div class="gal" id="gal"></div>
+<p style="text-align:center"><button class="hide" id="grefresh">更新</button></p>
 <div style="margin-top:18px"><button class="main" id="again">もう1回あそぶ</button></div>
 </section>
-<p class="sub" style="text-align:center;font-size:12px">ver.2</p>
+<p class="sub" style="text-align:center;font-size:12px">ver.3</p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.1/dist/umd/supabase.js"></script>
 <script>
@@ -195,6 +197,9 @@ st.arts.push(st.grid.slice());st.idx++;
 if(st.idx<st.players)toPass();else show("result")}
 $("done").onclick=finish;
 function gallery(){
+$("grefresh").classList.toggle("hide",!st.online);
+$("gstat").classList.toggle("hide",!st.online);
+if(st.online&&cur)$("gstat").textContent=gstat();
 $("gtitle").textContent="「"+st.theme+"」×"+st.pal.n;
 var g=$("gal");g.innerHTML="";
 st.arts.forEach(function(a,i){
@@ -299,7 +304,7 @@ for(var i=0;i<g.c.length;i++)if(!HX2.test(g.c[i]))return null;
 var sc=Number(g.s);if(!(sc>=10&&sc<=300))return null;
 return{r:g.r,th:g.th.slice(0,30),n:g.n.slice(0,20),bg:g.bg,c:g.c.slice(),s:Math.round(sc)}}
 function begin(v){
-rnd=v.r;mine="";st.theme=v.th;st.pal={n:v.n,bg:v.bg,c:v.c};st.secs=v.s;
+rnd=v.r;mine="";st.pool={};st.theme=v.th;st.pal={n:v.n,bg:v.bg,c:v.c};st.secs=v.s;
 cur.presence({rd:v.r,art:null,show:null}).catch(function(){});
 $("ready").onclick();$("dwho").textContent=myName}
 function game(peers){
@@ -329,14 +334,23 @@ ex++;var a=p.presence.art;if(a&&a.r===rnd&&typeof a.d==="string")got++});
 $("wcount").textContent=got+" / "+ex+"人";
 if(ex>0&&got>=ex&&!$("s-wait").classList.contains("hide"))show("result")}
 function collect(){
-st.arts=[];st.names=[];
+st.pool=st.pool||{};
 cur.peers().forEach(function(p){
 if(p.kind!=="viewer"||!p.presence)return;
 var a=p.presence.art;
 if(!a||a.r!==rnd||typeof a.d!=="string"||!/^[.0-9a-z]{256}$/.test(a.d))return;
 var g=[];for(var i=0;i<256;i++){var ch=a.d[i],v=ch==="."?-1:parseInt(ch,36);g.push(v>=0&&v<st.pal.c.length?v:-1)}
-st.arts.push(g);
-st.names.push(typeof p.presence.name==="string"&&p.presence.name?p.presence.name.slice(0,12):"ゲスト")})}
+var nm=typeof p.presence.name==="string"&&p.presence.name?p.presence.name.slice(0,12):"ゲスト";
+st.pool[nm+"|"+a.d]={g:g,n:nm}});
+st.arts=[];st.names=[];
+Object.keys(st.pool).forEach(function(k){st.arts.push(st.pool[k].g);st.names.push(st.pool[k].n)})}
+function gstat(){
+var ex=0,got=0;
+cur.peers().forEach(function(p){
+if(p.kind!=="viewer"||!p.presence||p.presence.rd!==rnd)return;
+ex++;var a=p.presence.art;if(a&&a.r===rnd&&typeof a.d==="string")got++});
+return got+" / "+ex+"人の絵が届いています。まだの人がいたら、あとで「更新」を押してください。"}
+$("grefresh").onclick=function(){collect();gallery()};
 function reveal(){collect();gallery()}
 $("wskip").onclick=reveal;
 function backToLobby(){cur.presence({art:null,rd:null}).catch(function(){});mine="";rnd="";show("lobby")}
