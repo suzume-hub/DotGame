@@ -50,11 +50,7 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 <section id="s-setup">
 <h1>ドットお絵かき</h1>
 <p class="sub">お題とパレットがランダムで決まります。みんなで同じ条件で描いて、見せ合おう。</p>
-<div class="card">
-<div class="row"><span>人数</span><span class="step"><button id="pm">−</button><b id="pn">3</b><button id="pp">＋</button></span></div>
-<div class="row"><span>制限時間(秒)</span><span class="step"><button id="tm">−</button><b id="tn">60</b><button id="tp">＋</button></span></div>
-</div>
-<button class="main" id="start">お題を決める</button>
+<button class="main" id="start">オフラインで遊ぶ</button>
 <p id="onl" class="hide" style="text-align:center"><button id="eon">オンラインで遊ぶ</button></p>
 <p style="text-align:center"><button id="eth">お題を編集</button> <button id="epl">パレットを編集</button></p>
 </section>
@@ -85,7 +81,8 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 <div class="card">
 <p class="sub">お題</p><div class="big" id="theme"></div>
 <p class="sub" style="text-align:center">パレット:<span id="pname"></span></p>
-<p class="sub" style="text-align:center">制限時間:<span id="psecs"></span>秒</p>
+<div class="row" id="prow"><span>人数</span><span class="step"><button id="pm">−</button><b id="pn">3</b><button id="pp">＋</button></span></div>
+<div class="row"><span>制限時間(秒)</span><span class="step"><button id="rtm">−</button><b id="psecs"></b><button id="rtp">＋</button></span></div>
 <div class="chips" id="pchips"></div>
 </div>
 <button class="main" id="go">描きはじめる</button>
@@ -119,7 +116,7 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 <p style="text-align:center"><button class="hide" id="grefresh">更新</button></p>
 <div style="margin-top:18px"><button class="main" id="again">もう1回あそぶ</button></div>
 </section>
-<p class="sub" style="text-align:center;font-size:12px">ver.5</p>
+<p class="sub" style="text-align:center;font-size:12px">ver.7</p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.1/dist/umd/supabase.js"></script>
 <script>
@@ -144,8 +141,8 @@ function show(id){["setup","reveal","pass","draw","result","gal","themes","pals"
 function pick(a){return a[Math.floor(Math.random()*a.length)]}
 function bump(k,el,d,lo,hi){st[k]=Math.max(lo,Math.min(hi,st[k]+d));$(el).textContent=st[k]}
 $("pm").onclick=function(){bump("players","pn",-1,1,8)};$("pp").onclick=function(){bump("players","pn",1,1,8)};
-$("tm").onclick=function(){bump("secs","tn",-10,10,300)};$("tp").onclick=function(){bump("secs","tn",10,10,300)};
 function roll(){
+$("prow").classList.toggle("hide",!!st.online);
 $("psecs").textContent=st.secs;
 $("go").textContent=st.online?"この内容で決定":"描きはじめる";
 st.theme=pick(THEMES);st.pal=pick(PALS);
@@ -155,6 +152,8 @@ var h=$("pchips");h.innerHTML="";
 show("reveal")}
 $("start").onclick=function(){st.idx=0;st.arts=[];roll()};
 $("reroll").onclick=roll;
+$("rtm").onclick=function(){bump("secs","psecs",-10,10,300)};
+$("rtp").onclick=function(){bump("secs","psecs",10,10,300)};
 $("rback").onclick=function(){show(st.online?"lobby":"setup")};
 function toPass(){$("who").textContent="プレイヤー"+(st.idx+1);show("pass")}
 $("go").onclick=function(){if(st.online){startOnline();return}toPass()};
@@ -299,7 +298,7 @@ if(p.kind!=="viewer")return;n++;
 var nm=p.presence&&typeof p.presence.name==="string"&&p.presence.name?p.presence.name.slice(0,12):"ゲスト";
 var li=document.createElement("li");li.textContent=nm+(p.sameTab?"(あなた)":"");ul.appendChild(li)});
 $("lcount").textContent=n+"人";var hp=peers.some(function(p){return p.kind==="viewer"&&p.presence&&p.presence.host===1});$("lstart").classList.toggle("hide",!(ishost||!hp));$("lwait").classList.toggle("hide",ishost||!hp)}
-$("lleave").onclick=function(){if(unP){unP();unP=null}if(unC){unC();unC=null}if(cur){cur.leave();cur=null}st.online=false;st.secs=parseInt($("tn").textContent,10)||60;$("show").classList.remove("hide");$("rwait").classList.add("hide");show("setup")};
+$("lleave").onclick=function(){if(unP){unP();unP=null}if(unC){unC();unC=null}if(cur){cur.leave();cur=null}st.online=false;$("show").classList.remove("hide");$("rwait").classList.add("hide");show("setup")};
 
 var HX2=/^#[0-9a-f]{6}$/i;
 function okGame(g){
