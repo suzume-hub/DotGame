@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ドットお絵かき</title>
+<title>きまぐれパレット</title>
 <style>
 :root{--bg:#fbf7ee;--fg:#2a2540;--sub:#6b6585;--card:#fff;--line:#2a2540;--acc:#ff6f91;--accfg:#fff;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -43,12 +43,15 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 .gal figcaption{font-weight:700;margin-top:4px}
 .code{font-size:40px;font-weight:800;letter-spacing:.15em}ul.pl{list-style:none;padding:0;margin:8px 0}ul.pl li{padding:8px 4px;border-bottom:2px dashed var(--sub);font-weight:700}
 #dtheme{white-space:pre-line;text-align:center;line-height:1.35;font-weight:700;font-size:15px}
+#s-draw{touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+figure button{margin-top:6px}
 </style>
 </head>
 <body>
 <main>
 <section id="s-setup">
 <h1>きまぐれパレット</h1>
+<p style="margin:0 0 10px;font-weight:700">〜みんなでドット絵お絵かき〜</p>
 <p class="sub">お題とパレットがランダムで決まります。みんなで同じ条件で描いて、見せ合おう。</p>
 <button class="main" id="start">オフラインで遊ぶ</button>
 <p id="onl" class="hide" style="text-align:center"><button id="eon">オンラインで遊ぶ</button></p>
@@ -116,7 +119,7 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 <p style="text-align:center"><button class="hide" id="grefresh">更新</button></p>
 <div style="margin-top:18px"><button class="main" id="again">もう1回あそぶ</button></div>
 </section>
-<p class="sub" style="text-align:center;font-size:12px">ver.7</p>
+<p class="sub" style="text-align:center;font-size:12px">ver.8</p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.1/dist/umd/supabase.js"></script>
 <script>
@@ -193,6 +196,8 @@ cv.addEventListener("pointerdown",function(e){snap();down=true;cv.setPointerCapt
 cv.addEventListener("pointermove",function(e){if(down)put(e)});
 cv.addEventListener("pointerup",function(){down=false});
 cv.addEventListener("pointercancel",function(){down=false});
+cv.addEventListener("contextmenu",function(e){e.preventDefault()});
+document.addEventListener("gesturestart",function(e){if(!$("s-draw").classList.contains("hide"))e.preventDefault()});
 function finish(){
 clearInterval(st.timer);
 if(st.online){onlineDone();return}
@@ -209,7 +214,9 @@ st.arts.forEach(function(a,i){
 var f=document.createElement("figure"),c=document.createElement("canvas");
 c.width=N;c.height=N;paint(c.getContext("2d"),a,st.pal);
 var cap=document.createElement("figcaption");cap.textContent=(st.online&&st.names&&st.names[i])||"プレイヤー"+(i+1);
-f.appendChild(c);f.appendChild(cap);g.appendChild(f)});
+var b=document.createElement("button");b.className="mini";b.textContent="保存";
+b.onclick=function(){saveArt(a,cap.textContent)};
+f.appendChild(c);f.appendChild(cap);f.appendChild(b);g.appendChild(f)});
 show("gal")}
 $("again").onclick=function(){if(st.online){backToLobby();return}st.idx=0;st.arts=[];roll()};
 $("eth").onclick=function(){$("tarea").value=THEMES.join("\n");$("tmsg").textContent="";show("themes")};
@@ -351,6 +358,17 @@ var nm=typeof p.presence.name==="string"&&p.presence.name?p.presence.name.slice(
 st.pool[nm+"|"+a.d]={g:g,n:nm}});
 st.arts=[];st.names=[];
 Object.keys(st.pool).forEach(function(k){st.arts.push(st.pool[k].g);st.names.push(st.pool[k].n)})}
+function saveArt(a,name){
+var S=512,c=document.createElement("canvas");c.width=S;c.height=S;
+var x=c.getContext("2d");x.imageSmoothingEnabled=false;
+var t=document.createElement("canvas");t.width=N;t.height=N;paint(t.getContext("2d"),a,st.pal);
+x.drawImage(t,0,0,S,S);
+c.toBlob(function(bl){
+if(!bl)return;
+var u=URL.createObjectURL(bl),l=document.createElement("a");
+l.href=u;l.download=("きまぐれパレット_"+st.theme+"_"+name+".png").replace(/[\\\/:*?"<>|]/g,"_");
+document.body.appendChild(l);l.click();l.remove();
+setTimeout(function(){URL.revokeObjectURL(u)},4000)},"image/png")}
 function gstat(){
 var ex=0,got=0;
 cur.peers().forEach(function(p){
