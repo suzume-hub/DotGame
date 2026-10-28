@@ -132,8 +132,12 @@ var PALS=[
 {n:"レトロゲーム",bg:"#e0f8d0",c:["#081820","#346856","#88c070"]},
 {n:"夕焼け",bg:"#fff1e0",c:["#2b1b3d","#7a2e5f","#d9485f","#ff8a3d","#ffd166","#5c4b8a"]},
 {n:"うみ",bg:"#f2fbff",c:["#0b3954","#087e8b","#3cc7c7","#8fd3e8","#ff5a5f"]},
-{n:"白黒+赤",bg:"#ffffff",c:["#111111","#777777","#d62839"]},
-{n:"森",bg:"#f4f1de",c:["#2d4a22","#588157","#a3b18a","#dad7cd","#8d5524","#e07a5f"]}
+{n:"紅白",bg:"#ffffff",c:["#111111","#777777","#d62839"]},
+{n:"森",bg:"#f4f1de",c:["#2d4a22","#588157","#a3b18a","#dad7cd","#8d5524","#e07a5f"]},
+{n:"ネオン街",bg:"#f1f1f1",c:["#dc1d90","#4fe9ee","#0e0b2c","#a07bdc"]},
+{n:"メロンソーダ",bg:"#dad2c6",c:["#5caa42","#125211","#e4bf47","#d7454f","#5a5a5a"]},
+{n:"火星",bg:"#e6c288",c:["#301e40","#9a4736","#c86650","#97ad4f"]},
+{n:"信号機",bg:"#ececec",c:["#606060","#dd1b31","#efd826","#31cf23"]}
 ];
 var DEF_T=THEMES.slice(),DEF_P=JSON.parse(JSON.stringify(PALS)),HX=/^#[0-9a-f]{6}$/i;
 function ld(k){try{var v=JSON.parse(localStorage.getItem("dotgame."+k));return Array.isArray(v)?v:null}catch(e){return null}}
