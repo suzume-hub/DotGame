@@ -119,7 +119,7 @@ figure button{margin-top:6px}
 <p style="text-align:center"><button class="hide" id="grefresh">更新</button></p>
 <div style="margin-top:18px"><button class="main" id="again">もう1回あそぶ</button></div>
 </section>
-<p class="sub" style="text-align:center;font-size:12px">ver.8</p>
+<p class="sub" style="text-align:center;font-size:12px">ver.9</p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.1/dist/umd/supabase.js"></script>
 <script>
@@ -260,7 +260,8 @@ var sb=null;
 try{if(window.supabase)sb=window.supabase.createClient(SB_URL,SB_KEY)}catch(e){sb=null}
 if(!sb)return null;
 return{join:function(code){return new Promise(function(resolve,reject){
-var key=Math.random().toString(36).slice(2)+Date.now().toString(36);
+var key="";try{key=localStorage.getItem("dotgame.cid")||""}catch(e){}
+if(!key){key=Math.random().toString(36).slice(2)+Date.now().toString(36);try{localStorage.setItem("dotgame.cid",key)}catch(e){}}
 var ch=sb.channel("dotgame-"+code,{config:{presence:{key:key}}});
 var mine={},pcb=[],ccb=[],done=false;
 function peers(){
@@ -385,6 +386,7 @@ $("grefresh").onclick=function(){collect();gallery()};
 function reveal(){collect();gallery()}
 $("wskip").onclick=reveal;
 function backToLobby(){cur.presence({art:null,rd:null}).catch(function(){});mine="";rnd="";show("lobby")}
+window.addEventListener("pagehide",function(){if(cur)cur.leave()});
 </script>
 </body>
 </html>
