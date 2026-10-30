@@ -119,7 +119,7 @@ figure button{margin-top:6px}
 <p style="text-align:center"><button class="hide" id="grefresh">更新</button></p>
 <div style="margin-top:18px"><button class="main" id="again">もう1回あそぶ</button></div>
 </section>
-<p class="sub" style="text-align:center;font-size:12px">ver.9</p>
+<p class="sub" style="text-align:center;font-size:12px">ver.10</p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.1/dist/umd/supabase.js"></script>
 <script>
@@ -271,10 +271,16 @@ var m=st[k];if(!m||!m.length)return;
 var pr=Object.assign({},m[m.length-1]);delete pr.presence_ref;
 out.push({kind:"viewer",presence:pr,sameTab:k===key})});
 return out}
+function push(n){
+var wait=function(){return new Promise(function(r){setTimeout(r,400*(n+1))})};
+return Promise.resolve().then(function(){return ch.track(mine)}).then(function(r){
+if(r!=="ok"&&n<4)return wait().then(function(){return push(n+1)});
+return r}).catch(function(){
+if(n<4)return wait().then(function(){return push(n+1)})})}
 var api={
 presence:function(patch){
 Object.keys(patch).forEach(function(k){if(patch[k]===null)delete mine[k];else mine[k]=patch[k]});
-return Promise.resolve(ch.track(mine))},
+return push(0)},
 peers:peers,
 onPeers:function(f){pcb.push(f);return function(){pcb=pcb.filter(function(x){return x!==f})}},
 onConnection:function(f){ccb.push(f);return function(){ccb=ccb.filter(function(x){return x!==f})}},
@@ -282,7 +288,7 @@ leave:function(){try{ch.untrack()}catch(e){}try{sb.removeChannel(ch)}catch(e){}}
 ch.on("presence",{event:"sync"},function(){var ps=peers();pcb.forEach(function(f){f({peers:ps})})});
 var tm=setTimeout(function(){if(!done){done=true;api.leave();reject(new Error("timeout"))}},10000);
 ch.subscribe(function(status){
-if(status==="SUBSCRIBED"){ccb.forEach(function(f){f(true)});if(!done){done=true;clearTimeout(tm);resolve(api)}}
+if(status==="SUBSCRIBED"){ccb.forEach(function(f){f(true)});if(!done){done=true;clearTimeout(tm);resolve(api)}else if(Object.keys(mine).length)push(0)}
 else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED"){ccb.forEach(function(f){f(false)});if(!done){done=true;clearTimeout(tm);reject(new Error(status))}}})
 })}}}
 room=mkRoom();
@@ -320,9 +326,9 @@ if(typeof g.th!=="string"||typeof g.n!=="string"||!HX2.test(g.bg)||!Array.isArra
 for(var i=0;i<g.c.length;i++)if(!HX2.test(g.c[i]))return null;
 var sc=Number(g.s);if(!(sc>=10&&sc<=300))return null;
 return{r:g.r,th:g.th.slice(0,30),n:g.n.slice(0,20),bg:g.bg,c:g.c.slice(),s:Math.round(sc)}}
-function begin(v){
+function begin(v,extra){
 rnd=v.r;mine="";st.pool={};st.theme=v.th;st.pal={n:v.n,bg:v.bg,c:v.c};st.secs=v.s;
-cur.presence({rd:v.r,art:null,show:null}).catch(function(){});
+var patch={rd:v.r,art:null,show:null};if(extra)Object.keys(extra).forEach(function(k){patch[k]=extra[k]});cur.presence(patch).catch(function(){});
 $("rtheme").textContent=v.th;$("rpname").textContent=v.n;$("rsecs").textContent=v.s;
 var h=$("rchips");h.innerHTML="";
 [v.bg].concat(v.c).forEach(function(c){var d=document.createElement("div");d.className="chip";d.style.background=c;h.appendChild(d)});
@@ -332,24 +338,26 @@ function game(peers){
 if(!st.online)return;
 var g=null;
 peers.forEach(function(p){if(!g&&p.kind==="viewer"&&p.presence&&p.presence.game&&typeof p.presence.game.r==="string")g=p.presence.game});
-if(g&&g.r!==lastR){lastR=g.r;if(Date.now()>ign){var v=okGame(g);if(v)begin(v)}}
+if(g&&rid(g.r)>rid(lastR)){lastR=g.r;if(Date.now()>ign){var v=okGame(g);if(v)begin(v)}}
 checkDone(peers)}
 $("lstart").onclick=function(){roll()};
+function rid(x){return parseInt(x,36)||0}
 function startOnline(){
-var pal=st.pal,r=Date.now().toString(36);
+var pal=st.pal,r=Math.max(Date.now(),rid(lastR)+1).toString(36);
 var g={r:r,th:st.theme.slice(0,30),n:pal.n.slice(0,20),bg:pal.bg,c:pal.c.slice(0,12),s:st.secs};
 lastR=r;
-cur.presence({game:g,host:ishost?1:null}).catch(function(){});
-begin(g)}
+begin(g,{game:g,host:ishost?1:null})}
 function onlineDone(){
 var d=st.grid.map(function(v){return v<0?".":v.toString(36)}).join("");
 mine=rnd;
+st.pool[myName+"|"+d]={g:st.grid.slice(),n:myName};
 cur.presence({art:{r:rnd,d:d}}).catch(function(){});
 show("wait");game(cur.peers())}
 function checkDone(peers){
 if(!st.online||!rnd||mine!==rnd)return;
 var ex=0,got=0;
 peers.forEach(function(p){
+if(p.sameTab){ex++;got++;return}
 if(p.kind!=="viewer"||!p.presence||p.presence.rd!==rnd)return;
 ex++;var a=p.presence.art;if(a&&a.r===rnd&&typeof a.d==="string")got++});
 $("wcount").textContent=got+" / "+ex+"人";
@@ -385,7 +393,7 @@ return got+" / "+ex+"人の絵が届いています。まだの人がいたら�
 $("grefresh").onclick=function(){collect();gallery()};
 function reveal(){collect();gallery()}
 $("wskip").onclick=reveal;
-function backToLobby(){cur.presence({art:null,rd:null}).catch(function(){});mine="";rnd="";show("lobby")}
+function backToLobby(){mine="";rnd="";show("lobby")}
 window.addEventListener("pagehide",function(){if(cur)cur.leave()});
 </script>
 </body>
